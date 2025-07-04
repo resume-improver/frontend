@@ -16,19 +16,29 @@ interface AnalyzeResult {
 }
 
 export default function Home() {
-  const [resume, setResume] = useState('');
-  const [vacancy, setVacancy] = useState('');
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [vacancyFile, setVacancyFile] = useState<File | null>(null);
   const [result, setResult] = useState<AnalyzeResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
+    if (!resumeFile || !vacancyFile) {
+      setError('Пожалуйста, загрузите оба файла.');
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.post('http://0.0.0.0:8000/analyze', {
-        resume_text: resume,
-        vacancy_text: vacancy
+      const formData = new FormData();
+      formData.append('resume_file', resumeFile);
+      formData.append('vacancy_file', vacancyFile);
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+      const res = await axios.post(`${apiUrl}/upload_pdf`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
       setResult(res.data);
     } catch (err: any) {
@@ -43,19 +53,41 @@ export default function Home() {
     <main className="p-6 max-w-4xl mx-auto font-sans bg-white text-black dark:bg-gray-900 dark:text-gray-100 min-h-screen transition-colors">
       <h1 className="text-2xl font-bold mb-4">Анализ резюме</h1>
 
-      <textarea
-        className="w-full h-40 p-2 border mb-4 bg-white dark:bg-gray-800 text-black dark:text-gray-100"
-        placeholder="Вставьте текст резюме..."
-        value={resume}
-        onChange={(e) => setResume(e.target.value)}
-      />
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold">Загрузите PDF резюме:</label>
+        <div className="flex items-center gap-4">
+          <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded cursor-pointer transition-colors font-semibold">
+            Выберите файл
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+          </label>
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            {resumeFile ? resumeFile.name : 'Файл не выбран'}
+          </span>
+        </div>
+      </div>
 
-      <textarea
-        className="w-full h-40 p-2 border mb-4 bg-white dark:bg-gray-800 text-black dark:text-gray-100"
-        placeholder="Вставьте описание вакансии..."
-        value={vacancy}
-        onChange={(e) => setVacancy(e.target.value)}
-      />
+      <div className="mb-4">
+        <label className="block mb-2 font-semibold">Загрузите PDF вакансии:</label>
+        <div className="flex items-center gap-4">
+          <label className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded cursor-pointer transition-colors font-semibold">
+            Выберите файл
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => setVacancyFile(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+          </label>
+          <span className="text-sm text-gray-700 dark:text-gray-300">
+            {vacancyFile ? vacancyFile.name : 'Файл не выбран'}
+          </span>
+        </div>
+      </div>
 
       <button
         onClick={handleAnalyze}
