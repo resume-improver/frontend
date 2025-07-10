@@ -2,11 +2,14 @@
 
 import { useState } from 'react';
 import axios from 'axios';
+import ReactMarkdown from 'react-markdown';
 
 interface ResumeImprovements {
   missing_skills?: string[];
   suggested_rewordings?: { original: string; suggested: string }[];
   block_order_suggestions?: { block: string; action: string }[];
+  raw?: string;
+  error?: string;
 }
 
 interface AnalyzeResult {
@@ -104,32 +107,40 @@ export default function Home() {
       {result && (
         <div className="mt-8">
           <h2 className="text-xl font-semibold mb-2">Сопроводительное письмо:</h2>
-          <pre className="bg-gray-100 dark:bg-gray-800 p-4 mb-6 whitespace-pre-wrap border dark:border-gray-700">{result.cover_letter_draft}</pre>
+          <pre className="bg-gray-100 dark:bg-gray-800 p-4 mb-6 whitespace-pre-wrap border dark:border-gray-700">
+            {result.cover_letter_draft}
+          </pre>
 
           <h2 className="text-xl font-semibold mb-2">Рекомендации по улучшению резюме:</h2>
-
-          {result.resume_improvements && (
+          {result.resume_improvements?.raw ? (
+            <div className="prose dark:prose-invert max-w-none">
+              <ReactMarkdown>{result.resume_improvements.raw}</ReactMarkdown>
+            </div>
+          ) : (
             <div>
               <h3 className="font-semibold mt-4">Отсутствующие навыки:</h3>
               <ul className="list-disc list-inside">
-                {result.resume_improvements.missing_skills?.map((skill: string, i: number) => (
+                {result.resume_improvements?.missing_skills?.map((skill: string, i: number) => (
                   <li key={i}>{skill}</li>
                 ))}
               </ul>
-
               <h3 className="font-semibold mt-4">Переформулировки:</h3>
               <ul className="list-disc list-inside">
-                {result.resume_improvements.suggested_rewordings?.map((r: any, i: number) => (
+                {result.resume_improvements?.suggested_rewordings?.map((r: any, i: number) => (
                   <li key={i}><b>Было:</b> {r.original} <br /><b>Стало:</b> {r.suggested}</li>
                 ))}
               </ul>
-
               <h3 className="font-semibold mt-4">Рекомендации по структуре:</h3>
               <ul className="list-disc list-inside">
-                {result.resume_improvements.block_order_suggestions?.map((s: any, i: number) => (
+                {result.resume_improvements?.block_order_suggestions?.map((s: any, i: number) => (
                   <li key={i}>{s.block} — {s.action}</li>
                 ))}
               </ul>
+            </div>
+          )}
+          {result.resume_improvements?.error && (
+            <div className="mt-2 text-red-500 text-sm">
+              Ошибка парсинга: {result.resume_improvements.error}
             </div>
           )}
         </div>
